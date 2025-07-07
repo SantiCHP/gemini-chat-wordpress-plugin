@@ -203,3 +203,214 @@ Licencia: MIT
 ## 13. Contacto y Soporte
 
 Para soporte, sugerencias o reportar bugs, contacta a: [santiago.castellano@maresalogistica.com] 
+
+---
+
+# Gemini Chat (English Version)
+
+Conversational chat for WordPress based on Gemini 2.5 Flash, limited to the website's content.
+
+---
+
+## Index
+
+1. [General Description](#general-description)
+2. [File Structure](#file-structure)
+3. [Installation and Activation](#installation-and-activation)
+4. [Workflow](#workflow)
+5. [Component Explanation](#component-explanation)
+    - [PHP (Backend)](#a-php-backend)
+    - [JavaScript (Frontend)](#b-javascript-frontend)
+    - [CSS (Styles)](#c-css-styles)
+6. [Customization and Extension](#customization-and-extension)
+7. [Security](#security)
+8. [Considerations and Best Practices](#considerations-and-best-practices)
+9. [Extension Example](#extension-example)
+10. [Flow Diagram](#flow-diagram)
+11. [Usage Example](#usage-example)
+12. [Credits and License](#credits-and-license)
+13. [Contact and Support](#contact-and-support)
+
+---
+
+## 1. General Description
+
+**Gemini Chat** is a WordPress plugin that adds a conversational chat to your website, using the Gemini 2.5 Flash API. The chat only responds about the content published on the site (posts and pages). Users can ask general questions or request detailed information about a specific title.
+
+---
+
+## 2. File Structure
+
+```
+gemini-chat/
+│
+├── assets/
+│   ├── chat.css      # Chat styles
+│   ├── chat.js       # Frontend logic (UI and AJAX)
+│   └── chat-icon.png # Floating bubble icon
+│
+├── gemini-chat.php   # Main plugin logic (backend)
+└── README.md         # Technical documentation
+```
+
+---
+
+## 3. Installation and Activation
+
+1. **Clone or copy** the `gemini-chat` folder into your WordPress installation's `wp-content/plugins/` directory.
+2. Make sure the files `chat.css`, `chat.js`, and `chat-icon.png` are inside the `assets/` folder.
+3. Go to the WordPress admin panel > Plugins and activate "Gemini Chat".
+4. (Optional) Change the Gemini API key in `gemini-chat.php` to your own:
+
+```php
+$api_key = 'YOUR_API_KEY_HERE';
+```
+
+---
+
+## 4. Workflow
+
+1. **Resource loading:** The plugin injects the necessary CSS and JS files into the frontend.
+2. **User interface:** A floating bubble is displayed. Clicking it opens the chat window.
+3. **Message sending:** The user writes a question and sends it.
+4. **AJAX:** The message is sent via AJAX to WordPress, which processes it in the backend.
+5. **Processing:** The backend generates a prompt for the Gemini API, using the site's content.
+6. **Response:** Gemini's response is returned to the frontend and displayed in the chat, rendered as Markdown.
+
+---
+
+## 5. Component Explanation
+
+### A. PHP (Backend)
+
+- **Script and style loading:**  
+  Uses `wp_enqueue_scripts` to include the necessary files and passes variables to JS with `wp_localize_script`.
+
+- **HTML interface:**  
+  Injects the HTML for the bubble and chat window into the footer using `wp_footer`.
+
+- **AJAX:**  
+  Defines the `gemini_chat_ask` endpoint to process user questions.  
+  - If the user asks "know more about [title]", it fetches the full content of that post/page.
+  - If the question is general, it generates a context with titles and excerpts from the whole site.
+
+- **Helper functions:**
+  - `gemini_chat_get_site_context($all)`: Gets titles and excerpts from posts/pages.
+  - `gemini_chat_get_post_content_by_title($title)`: Searches for the full content of a post/page by title.
+  - `gemini_chat_call_gemini($prompt)`: Calls the Gemini API and returns the response.
+
+### B. JavaScript (Frontend)
+
+- **Interface:**  
+  Controls opening/closing the chat and sending messages.
+- **AJAX:**  
+  Sends the user's message to the backend and displays the response.
+- **Markdown:**  
+  If available, uses `marked.js` to render the response in Markdown format.
+
+### C. CSS (Styles)
+
+- **Modern and responsive styles** for the bubble, chat window, messages, and Markdown content.
+
+---
+
+## 6. Customization and Extension
+
+- **Change the model or API:**  
+  Modify the `gemini_chat_call_gemini` function in PHP.
+- **Add validations or filters:**  
+  You can add logic in the `gemini_chat_ask` function.
+- **Modify the interface:**  
+  Edit the HTML in the `wp_footer` hook and the CSS/JS files in `assets/`.
+- **Internationalization:**  
+  Use WordPress translation functions (`__()`, `_e()`) for static texts.
+
+---
+
+## 7. Security
+
+- **Nonce:**  
+  A nonce is used to protect the AJAX endpoint.
+- **Sanitization:**  
+  The user's message is sanitized with `sanitize_text_field`.
+- **Restricted access:**  
+  The main PHP file checks for WordPress access (`defined('ABSPATH')`).
+- **Do not expose the API Key in production:**  
+  Use environment variables or WordPress options for better security.
+
+---
+
+## 8. Considerations and Best Practices
+
+- **Limit API access:**  
+  Consider adding usage limits or additional validations.
+- **Update dependencies:**  
+  If you use external libraries (like `marked.js`), keep them updated.
+- **Accessibility:**  
+  Improve chat accessibility for users with disabilities.
+- **Testing:**  
+  Test on different browsers and devices.
+
+---
+
+## 9. Extension Example
+
+**Add support for Custom Post Types:**
+
+Modify the `gemini_chat_get_site_context` function to include other content types:
+
+```php
+'post_type' => ['post', 'page', 'my_custom_post_type'],
+```
+
+**Example of additional validation in the backend:**
+
+```php
+if (strlen($user_message) > 500) {
+    wp_send_json_error('The message is too long.');
+}
+```
+
+---
+
+## 10. Flow Diagram
+
+```mermaid
+graph TD;
+    A[User writes message] --> B[JS sends AJAX to WP]
+    B --> C[PHP processes message]
+    C --> D{Know more about}
+    D -- Yes --> E[Fetch full content by title]
+    D -- No --> F[Generate context with titles and excerpts]
+    E --> G[Generate prompt for Gemini]
+    F --> G
+    G --> H[Call Gemini API]
+    H --> I[Receive response]
+    I --> J[Return response via AJAX]
+    J --> K[JS shows response in chat]
+```
+
+---
+
+## 11. Usage Example
+
+1. The user sees the floating bubble on the website.
+2. Clicks and the chat window opens.
+3. Writes: `What services does this website offer?`
+4. The bot responds suggesting the most relevant title.
+5. The user writes: `I want to know more about Services.`
+6. The bot responds with the full content of the "Services" page.
+
+---
+
+## 12. Credits and License
+
+Developed by: Santiago Castellano
+
+License: MIT
+
+---
+
+## 13. Contact and Support
+
+For support, suggestions or to report bugs, contact: [santiago.castellano@maresalogistica.com] 
